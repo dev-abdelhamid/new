@@ -43,6 +43,9 @@ const Gallery = () => {
   const [data, setData] = useState([]);
   const [filter, setFilter] = useState([]);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  console.log(lastPage);
 
   useEffect(() => {
     setLoading(true);
@@ -50,8 +53,9 @@ const Gallery = () => {
     const headers = {
       'Accept-Language': `${i18n.language}`, // Change language dynamically based on state
     };
-    axios.get(`${API_BASE_URL}/projects`, { headers: headers, }).then(response => {
+    axios.get(`${API_BASE_URL}/projects?page=${page}`, { headers: headers, }).then(response => {
       setData(response.data.data);  // Set the response data to state
+      setLastPage(response.data.pagination.last_page);
       setLoading(false);  // Set loading to false
 
     })
@@ -73,7 +77,7 @@ const Gallery = () => {
         setLoading(false)
       });
 
-  }, []);  // Run this effect whenever the `language` changes
+  }, [page]);  // Run this effect whenever the `language` changes
 
   const categories = useMemo(() => [
     { id: 'all', label: t('projects.categories.all') },
@@ -125,22 +129,22 @@ const Gallery = () => {
                   className="flex flex-wrap justify-center gap-3 md:gap-4 mb-16"
                 >
                   <button
-                      
-                      onClick={() => {
-                        setActiveTab('all');
-                        setVisibleProjects(columns === 3 ? 6 : columns === 2 ? 4 : 2);
-                      }}
-                      className={`
+
+                    onClick={() => {
+                      setActiveTab('all');
+                      setVisibleProjects(columns === 3 ? 6 : columns === 2 ? 4 : 2);
+                    }}
+                    className={`
                 px-6 py-3 rounded-full font-medium transition-all duration-300
                 ${activeTab === 'all'
-                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105'
-                          : `${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-600'} 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105'
+                        : `${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-600'} 
                      hover:shadow-md hover:scale-105`
-                        }
+                      }
               `}
-                    >
-                      {t('projects.categories.all')}
-                    </button>
+                  >
+                    {t('projects.categories.all')}
+                  </button>
                   {filter.map((singleCategory) => (
                     <button
                       key={singleCategory.id}
@@ -165,27 +169,44 @@ const Gallery = () => {
                 {/* Projects Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
 
-                    <AnimatePresence mode="wait">
-                      {data.map((project, index) => (
-                        activeTab == 'all' || project.categoryId == activeTab ? (
-                          <motion.div
-                            key={project.titleEn}
-                            layout
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.4, delay: index * 0.1 }}
-                          >
-                            <ProjectCard
-                              {...project}
-                              currentLang={currentLang}
-                              isDarkMode={isDarkMode}
-                            />
-                          </motion.div>
-                        )
-                          : null
-                      ))}
-                    </AnimatePresence>
+                  <AnimatePresence mode="wait">
+                    {data.map((project, index) => (
+                      activeTab == 'all' || project.categoryId == activeTab ? (
+                        <motion.div
+                          key={project.titleEn}
+                          layout
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.4, delay: index * 0.1 }}
+                        >
+                          <ProjectCard
+                            {...project}
+                            currentLang={currentLang}
+                            isDarkMode={isDarkMode}
+                          />
+                        </motion.div>
+                      )
+                        : null
+                    ))}
+                  </AnimatePresence>
+                </div>
+                {/* pagination */}
+                <div className="pagination flex items-center justify-center mt-8 gap-3 ">
+                  {/* array from 1 to lastPage .map */}
+                  {
+                    [...Array(lastPage)].map((_, index) => (
+                      <button onClick={() => {
+                        setPage(index + 1);
+                      }}
+                      disabled={page === index + 1}
+                      className={`w-8 h-8 flex items-center justify-center rounded-full font-medium
+                      bg-[#2563eb] text-white hover:bg-white hover:text-[#2563eb] transition-all duration-300 ${page === index + 1 ? 'rounded-md opacity-70' : ''}`}
+                      >
+                        {index + 1}
+                      </button>
+                    ))
+                  }
                 </div>
               </div>
             </div>
